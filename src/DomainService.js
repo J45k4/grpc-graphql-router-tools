@@ -2,8 +2,14 @@ import protobuf from "protobufjs";
 import convertProtoType from "./ConvertProtoType";
 
 import {
-	GraphQLID
+	GraphQLID,
+	GraphQLInputObjectType
 } from "graphql";
+
+import {
+	capitalizeFirstLetter,
+	capitalizeOnlyFirstLetter
+} from "./stringhelpers";
 
 import METHOD_TYPES from "./method_types";
 
@@ -46,11 +52,22 @@ export default class DomainService {
 					}
 				} else {
 					if (method.args) {
-						Object.keys(method.args).forEach(argName => {
-							args[argName] = {
-								type: method.args[argName].type.schema
-							};
-						});
+						args = {
+							params: {
+								type: new GraphQLInputObjectType({
+									name: capitalizeFirstLetter(method.name) + "Input",
+									fields: () => {
+										let a = {};
+										Object.keys(method.args).forEach(argName => {
+											a[argName] = {
+												type: method.args[argName].type.schema
+											};
+										});
+										return a;
+									}
+								})
+							}
+						};					
 					} else {
 						throw new Error(this.name + " service method " + serviceMethodName + " needs to provide either args or dataLoader");
 					}
@@ -69,8 +86,5 @@ export default class DomainService {
 			});
 		}
 		return this._schema;
-	}
-
-	createContext(options) {
 	}
 }

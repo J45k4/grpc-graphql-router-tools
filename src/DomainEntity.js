@@ -23,6 +23,10 @@ export default class DomainEntity {
 			const getFields = () => {
 				var fields = {};
 				Object.keys(this.fields).forEach(fieldName => {
+					const field = this.fields[fieldName];
+					if (!field.type) {
+						throw new Error("DomainEntity " + this.name + " field " + fieldName + " does not have valid type property");
+					}
 					fields[fieldName] = {
 						type: this.fields[fieldName].type.schema
 					};

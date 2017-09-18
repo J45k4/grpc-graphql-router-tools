@@ -119,7 +119,30 @@ const CreateServiceMethodGenerator = ({
 		if (client[serviceMethodName] && typeof client[serviceMethodName] === "function") {
 			if (method.dataLoader) {
 				let dataLoader = new DataLoader(keys => new Promise((resolve, reject) => {
-					var req = new messages[method.requestTypeName]();
+					let req;
+					let requestMessageName = method.requestTypeName;
+					if (requestMessageName) {
+						if (!messages[method.requestTypeName] &&
+							messages[method.requestTypeName] !== "function") {
+								throw new Error("There is no messagetype " + requestMessageName);
+							} else {
+								req = new messages[requestMessageName]();
+							}
+						
+					} else {
+						requestMessageName = capitalizeFirstLetter(serviceMethodName) + "Request";
+						if (messages[requestMessageName] &&
+							typeof messages[requestMessageName] === "function") {
+							req = new messages[requestMessageName]();
+						} else {
+							throw new Error("There is no messagetype " + requestMessageName);
+						}						
+					}
+					if (!req["set" + capitalizeOnlyFirstLetter(method.dataLoader.serviceTypeName) + "List"] &&
+						typeof req["set" + capitalizeOnlyFirstLetter(method.dataLoader.serviceTypeName) + "List"] !== "function") {
+						throw new Error(requestMessageName + " type does not have property " + method.dataLoader.serviceTypeName);
+					}
+
 					req["set" + capitalizeOnlyFirstLetter(method.dataLoader.serviceTypeName) + "List"](keys);
 					client[serviceMethodName](req, (err, res) => {
 						if (err) {
@@ -138,10 +161,33 @@ const CreateServiceMethodGenerator = ({
 				return (props) => dataLoader.load(props[method.dataLoader.name]);
 			} else {
 				return (props) => new Promise((resolve, reject) => {
-					var req = new messages[method.requestTypeName]();
-					Object.keys(method.args).forEach(argName => {
-						req["set" + capitalizeOnlyFirstLetter(argName)](props[argName]);
-					});
+					// if (!props.params) {
+					// 	throw new Error(method.name + " request does not have params input property");
+					// }
+					let req;
+					if (method.requestTypeName) {
+						if (!messages[method.requestTypeName] &&
+							messages[method.requestTypeName] !== "function") {
+								throw new Error("There is no messagetype " + method.requestTypeName);
+							} else {
+								req = new messages[method.requestTypeName]();
+							}
+						
+					} else {
+						const requestMessageName = capitalizeFirstLetter(serviceMethodName) + "Request";
+						if (messages[requestMessageName] &&
+							typeof messages[requestMessageName] === "function") {
+							req = new messages[requestMessageName]();
+						} else {
+							throw new Error("There is no messagetype " + requestMessageName);
+						}
+						
+					}
+					if (props.params) {
+						Object.keys(method.args).forEach(argName => {
+							req["set" + capitalizeOnlyFirstLetter(argName)](props.params[argName]);
+						});
+					}
 					client[serviceMethodName](req, (err, res) => {
 						if (err) {
 							reject(err);
