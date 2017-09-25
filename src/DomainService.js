@@ -1,6 +1,8 @@
 import protobuf from "protobufjs";
 import convertProtoType from "./ConvertProtoType";
 
+import ListType from "./ListType";
+
 import {
 	GraphQLID,
 	GraphQLInputObjectType
@@ -19,12 +21,33 @@ export default class DomainService {
 			throw new Error("DomainService constructor options needs to be an object not null");
 		}
 		if (!options.name) {
-			throw new Error("DomainService constructor options needs to have name field");
+			throw new Error("DomainService constructor options needs to have name property");
+		}
+		this.name = options.name;
+		if (!options.services) {
+			throw new Error(this.name + " DomainService constructor options needs to have services property");
 		}
 		this.services = options.services;
+		if (!options.messages) {
+			throw new Error(this.name + " DomainService constructor options needs to have messages property");
+		}
 		this.messages = options.messages;
-		this.name = options.name;
+		if (!options.methods) {
+			throw new Error(this.name + " DomainService constructor options needs to have methods property");
+		}
 		this.methods = options.methods;
+
+		Object.keys(this.methods).forEach(methodName => {
+			const method = this.methods[methodName];
+			if (!method.type) {
+				throw new Error(this.name + " DomainService method " + methodName + " type property is null");
+			}
+			if (method.type instanceof ListType) {
+				if (!method.type.type) {
+					throw new Error(this.name + " DomainService method " + methodName + " type ListType property type is null");
+				}
+			}
+		});
 	}
 
 	get serviceMethods() {
@@ -76,7 +99,7 @@ export default class DomainService {
 					name: method.name,
 					type: method.type.schema,
 					args,
-					resolve: (obj, props, context) => context[this.name][serviceMethodName](props)
+					resolve: (obj, props, context) => context[this.name][serviceMethodName](props ? method.dataLoader ? props : props.params || {} : {})
 				};
 				if (method.methodType === METHOD_TYPES.QUERY) {
 					this._schema.query[method.name] = obj;

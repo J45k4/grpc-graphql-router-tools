@@ -20,18 +20,29 @@ export default ({
 	
 	const getContextDomainEntity = (context, domainEntity) => {
 		return function(model) {
-			Object.keys(domainEntity.fields).forEach(fieldName => {
-				const field = domainEntity.fields[fieldName];
+			const fields = domainEntity.fields();
+			Object.keys(fields).forEach(fieldName => {
+				const field = fields[fieldName];
 				if (field.serviceMethod) {
 					let args = {};
 
-					Object.keys(field.inhertedArgs).forEach(argName => {
-						args[field.inhertedArgs[argName]] = model["get" + capitalizeOnlyFirstLetter(argName)]()
-					});
+					if (field.inhertedArgs) {
+						Object.keys(field.inhertedArgs).forEach(argName => {
+							args[field.inhertedArgs[argName]] = model["get" + capitalizeOnlyFirstLetter(argName)]()
+						});
+					}
 
-					this[fieldName] = () => {
+					this[fieldName] = (props) => {
+						var newArgs = {
+							...args
+						}
+						if (field.args) {
+							Object.keys(field.args).forEach(argName => {
+								newArgs[argName] = props[argName];
+							});
+						}
 						return new Promise((resolve, reject) => {
-							context[field.serviceMethod](args).then(res => {
+							context[field.serviceMethod](newArgs).then(res => {
 								if (field.returnField) {
 									resolve(res[field.returnField]);
 								} else {
@@ -164,6 +175,7 @@ const CreateServiceMethodGenerator = ({
 					// if (!props.params) {
 					// 	throw new Error(method.name + " request does not have params input property");
 					// }
+					console.log(serviceMethodName, "props", props);
 					let req;
 					if (method.requestTypeName) {
 						if (!messages[method.requestTypeName] &&
@@ -183,9 +195,22 @@ const CreateServiceMethodGenerator = ({
 						}
 						
 					}
-					if (props.params) {
+					if (props) {
 						Object.keys(method.args).forEach(argName => {
-							req["set" + capitalizeOnlyFirstLetter(argName)](props.params[argName]);
+							const arg = method.args[argName];
+							if (arg.type instanceof ListType) {
+								if (req["set" + capitalizeOnlyFirstLetter(argName) + "List"]) {
+									req["set" + capitalizeOnlyFirstLetter(argName) + "List"](props[argName]);
+								} else {
+									console.error(serviceMethodName, "has no method set" + capitalizeOnlyFirstLetter(argName) + "List");
+								}
+							} else {
+								if (req["set" + capitalizeOnlyFirstLetter(argName)]) {
+									req["set" + capitalizeOnlyFirstLetter(argName)](props[argName]);
+								} else {
+									console.error(serviceMethodName, "has no method set" + capitalizeOnlyFirstLetter(argName));
+								}
+							}
 						});
 					}
 					client[serviceMethodName](req, (err, res) => {

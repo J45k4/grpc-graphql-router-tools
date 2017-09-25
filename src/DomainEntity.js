@@ -4,6 +4,8 @@ import {
 import protobuf from "protobufjs";
 import convertProtoType from "./ConvertProtoType";
 
+import ListType from "./ListType";
+
 export default class DomainEntity {
 	constructor(options) {
 		if (!options) {
@@ -13,63 +15,61 @@ export default class DomainEntity {
 			throw new Error("DomainEntity options needs to have name property");
 		}
 		this.name = options.name;
+		if (!options.fields) {
+			throw new Error("DomainEntity " + this.name + " needs to have fields option");
+		}
 		this.fields = options.fields;
-		this.properties = options.properties;
-		this.disabledFields = options.disabledFields || {};
+		// const fields = this.fields();
+		// Object.keys(fields).forEach(fieldName => {
+		// 	const field = fields[fieldName];
+		// 	if (!field) {
+		// 		throw new Error(this.name + " DomainEntity type has null field");
+		// 	}
+		// 	if (!field.type) {
+		// 		throw new Error(this.name + " DomainEntity field " + fieldName + " type is null");
+		// 	}
+		// 	if (field.type instanceof ListType) {
+		// 		if (!field.type.type) {
+		// 			throw new Error(this.name + " DomainEntity field " + fieldName + " type is ListType but its type is null");
+		// 		}
+		// 	}
+		// });
 	}
 
 	get schema() {
 		if (!this._schema) {
 			const getFields = () => {
-				var fields = {};
-				Object.keys(this.fields).forEach(fieldName => {
-					const field = this.fields[fieldName];
+				const fields = this.fields();
+				let newFields = {}
+				Object.keys(fields).map(fieldName => {
+					const field = fields[fieldName];
+					if (!field) {
+						throw new Error(this.name + " DomainEntity type has null field");
+					}
 					if (!field.type) {
 						throw new Error("DomainEntity " + this.name + " field " + fieldName + " does not have valid type property");
 					}
-					fields[fieldName] = {
-						type: this.fields[fieldName].type.schema
+					if (field.type instanceof ListType) {
+						if (!field.type.type) {
+							throw new Error(this.name + " DomainEntity field " + fieldName + " type is ListType but its type is null");
+						}
+					}
+					let args = {};
+					if (field.args) {
+						Object.keys(field.args).forEach(argName => {
+							const arg = field.args[argName];
+							args[argName] = {
+								type: arg.type.schema
+							};
+						});
+					}
+					newFields[fieldName] = {
+						type: fields[fieldName].type.schema,
+						args
 					};
 				});
-				return fields;
-			};
-			this._schema = new GraphQLObjectType({
-				name: this.name,
-				fields: getFields
-			});
-		}
-		return this._schema;
-	}
-
-	getSchema(serviceRoot) {
-		if (!serviceRoot) {
-			throw new Error("ServiceRoot for " + this.name + " type getSchema method is null");
-		}
-		if (!(serviceRoot instanceof protobuf.Root)) {
-			throw new Error("ServiceRoot " + this.name + " needs to be instanse of protobufjs root");
-		}
-		if (!this._schema) {
-			const getFields = () => {
-				var fields = {};
-				const protoType = serviceRoot.lookupType(this.name);
-				protoType.fieldsArray.forEach(field => {
-					if (!this.disabledFields[field.name]) {
-						fields[field.name] = {
-							type: convertProtoType(field.type, field.name)
-						};
-					}
-				})
-				if (this.properties) {
-					Object.keys(this.properties).forEach(propKey => {
-						fields[propKey] = {
-							type: this.properties[propKey].type.getSchema(serviceRoot)
-						};
-					});
-				}
-
-				return fields;
-			};
-
+				return newFields;
+			}
 			this._schema = new GraphQLObjectType({
 				name: this.name,
 				fields: getFields
