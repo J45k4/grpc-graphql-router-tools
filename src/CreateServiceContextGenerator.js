@@ -172,10 +172,6 @@ const CreateServiceMethodGenerator = ({
 				return (props) => dataLoader.load(props[method.dataLoader.name]);
 			} else {
 				return (props) => new Promise((resolve, reject) => {
-					// if (!props.params) {
-					// 	throw new Error(method.name + " request does not have params input property");
-					// }
-					console.log(serviceMethodName, "props", props);
 					let req;
 					if (method.requestTypeName) {
 						if (!messages[method.requestTypeName] &&

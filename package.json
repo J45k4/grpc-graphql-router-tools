@@ -1,6 +1,6 @@
 {
   "name": "grpc-graphql-router-tools",
-  "version": "0.0.17",
+  "version": "0.0.18",
   "description": "Library for creating graphql api gateway for grpc services.",
   "main": "index.js",
   "repository": {
