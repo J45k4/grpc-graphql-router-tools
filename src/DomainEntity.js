@@ -19,6 +19,10 @@ export default class DomainEntity {
 			throw new Error("DomainEntity " + this.name + " needs to have fields option");
 		}
 		this.fields = options.fields;
+		if (typeof this.fields !== "function") {
+			throw new Error(`DomainEntity ${this.name} fields option needs to be function`);
+		}
+
 		// const fields = this.fields();
 		// Object.keys(fields).forEach(fieldName => {
 		// 	const field = fields[fieldName];
