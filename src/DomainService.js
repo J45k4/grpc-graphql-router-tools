@@ -68,6 +68,10 @@ export default class DomainService {
 					throw new Error(this.name + " service method " + serviceMethodName + " needs to have methodType property");
 				}
 
+				if (!method.name && method.methodType) {
+					throw new Error(this.name + " service method " + serviceMethodName + " needs to have name property");
+				}
+
 				let args = {};
 				if (method.dataLoader) {
 					args[method.dataLoader.name] = {

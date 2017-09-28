@@ -90,9 +90,10 @@ export default ({
 	};
 
 	Object.keys(domainService.methods).forEach(methodName => {
+		const method = domainService.methods[methodName];
 		serviceMethodGenerators[methodName] = CreateServiceMethodGenerator({
-			serviceMethodName: methodName,
-			method: domainService.methods[methodName],
+			serviceMethodName: method.serviceMethodName || methodName,
+			method: method,
 			messages: domainService.messages,
 			getContextDomainEntity
 		});
@@ -213,7 +214,23 @@ const CreateServiceMethodGenerator = ({
 						if (err) {
 							reject(err);
 						} else {
-							resolve(new (getContextDomainEntity(context, method.type))(res));
+							if (method.returnField) {
+								if (method.type instanceof ListType) {
+									if (res["get" + capitalizeOnlyFirstLetter(method.returnField) + "List"]) {
+										resolve(res["get" + capitalizeOnlyFirstLetter(method.returnField) + "List"]().map(p => {
+											return new (getContextDomainEntity(context, method.type.type))(p);
+										}))
+									}
+								} else {
+									if (res["get" + capitalizeOnlyFirstLetter(method.returnField)]) {
+										resolve(new (getContextDomainEntity(context, method.type))(
+											res["get" + capitalizeOnlyFirstLetter(method.returnField)]()
+										));
+									}
+								}
+							} else {
+								resolve(new (getContextDomainEntity(context, method.type))(res));
+							}
 						}
 					});
 				});
