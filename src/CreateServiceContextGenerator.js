@@ -20,6 +20,9 @@ export default ({
 	
 	const getContextDomainEntity = (context, domainEntity) => {
 		return function(model) {
+			if (typeof domainEntity.fields !== "function") {
+				throw new Error("DomainEntity " + domainEntity.name + " fields needs to be function");
+			}
 			const fields = domainEntity.fields();
 			Object.keys(fields).forEach(fieldName => {
 				const field = fields[fieldName];
