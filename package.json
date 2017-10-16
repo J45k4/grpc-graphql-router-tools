@@ -1,6 +1,6 @@
 {
   "name": "grpc-graphql-router-tools",
-  "version": "0.0.23",
+  "version": "0.0.24",
   "description": "Library for creating graphql api gateway for grpc services.",
   "main": "index.js",
   "repository": {
@@ -8,12 +8,15 @@
     "url": "git+https://github.com/J45k4/grpc-graphql-router-tools.git"
   },
   "scripts": {
-	"test": "jest",
-	"test-changed": "jest -o",
+    "test": "jest",
+    "test-changed": "jest -o",
     "watch": "babel-watch ./testaus/app.js",
     "build": "babel src --out-dir dist/",
-	"prepublish": "npm run build",
-	"test-circular": "babel-node ./circulartest"
+    "prepublish": "npm run build",
+    "test-circular": "babel-node ./circulartest",
+    "bump-patch": "grunt bump:patch",
+    "bump-minor": "grunt bump:minor",
+    "bump-major": "grunt bump:major"
   },
   "author": "JarmoJuusto",
   "license": "MIT",
@@ -22,7 +25,7 @@
       "\\.css$": "identity-obj-proxy"
     },
     "testPathIgnorePatterns": [
-	  "/dist/",
+      "/dist/",
       "/node_modules/"
     ]
   },
@@ -43,7 +46,9 @@
     "body-parser": "^1.18.1",
     "graphql": "^0.11.3",
     "grpc": "^1.6.0",
-    "google-protobuf": "^3.4.0"
+    "google-protobuf": "^3.4.0",
+    "grunt": "^1.0.1",
+    "grunt-bump": "^0.8.0"
   },
   "files": [
     "dist/",
