@@ -45,6 +45,9 @@ export default ({
 							});
 						}
 						return new Promise((resolve, reject) => {
+							if (!context[field.serviceMethod] || typeof context[field.serviceMethod] !== "function") {
+								throw new Error("DomainEntity " + domainEntity.name + " " + field.serviceMethod + " is not function");
+							}
 							context[field.serviceMethod](newArgs).then(res => {
 								if (field.returnField) {
 									resolve(res[field.returnField]);
